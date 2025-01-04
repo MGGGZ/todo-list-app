@@ -1,0 +1,14 @@
+project/
+│
+├── public/
+│   ├── index.html
+│   ├── style.css
+│   ├── app.js
+│   └── manifest.json
+│
+├── server/
+│   ├── server.js
+│   └── database.json
+│
+├── service-worker.js
+└── package.json
