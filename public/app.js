@@ -12,19 +12,8 @@ const todoListElement = document.getElementById("todo-list");
 // ローカルストレージキー
 const STORAGE_KEY = "todoList";
 
-// 現在の日付と時刻を取得する関数
-function getCurrentDateTime() {
-  const now = new Date();
-  const options = {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  };
-  return now.toLocaleString("ja-JP", options);
-}
+// 編集中のタスクインデックス（初期値はnull）
+let editingIndex = null;
 
 // ローカルストレージからタスクリストを読み込む関数
 function loadTodoList() {
@@ -39,8 +28,8 @@ function saveTodoList() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(todoList));
 }
 
-// タスクを追加する関数
-function addTodo() {
+// タスクを追加または編集する関数
+function saveTodo() {
   const title = todoTitleInput.value.trim();
   const content = todoContentInput.value.trim();
 
@@ -49,19 +38,24 @@ function addTodo() {
     return;
   }
 
-  // 現在の日付と時刻を取得
-  const dateTime = getCurrentDateTime();
+  // 編集中かどうかを判定
+  if (editingIndex !== null) {
+    // 編集中の場合、該当タスクを更新
+    todoList[editingIndex].title = title;
+    todoList[editingIndex].content = content;
+    editingIndex = null; // 編集状態をリセット
+  } else {
+    // 新しいタスクを追加
+    const newTodo = {
+      title,
+      content,
+      dateTime: getCurrentDateTime(),
+    };
+    todoList.push(newTodo);
+  }
 
-  // 新しいタスクオブジェクトを作成
-  const newTodo = { title, content, dateTime };
-
-  // タスクリストに追加
-  todoList.push(newTodo);
-
-  // タスクリストを保存
+  // タスクリストを保存して再描画
   saveTodoList();
-
-  // タスクリストを再描画
   renderTodoList();
 
   // 入力欄をクリア
@@ -93,11 +87,21 @@ function renderTodoList() {
     dateTimeElement.textContent = `作成日時: ${todo.dateTime}`;
     listItem.appendChild(dateTimeElement);
 
+    // 編集ボタン
+    const editButton = document.createElement("button");
+    editButton.textContent = "編集";
+    editButton.addEventListener("click", () => {
+      todoTitleInput.value = todo.title;
+      todoContentInput.value = todo.content;
+      editingIndex = index; // 編集するタスクのインデックスを保存
+    });
+    listItem.appendChild(editButton);
+
     // 削除ボタン
     const deleteButton = document.createElement("button");
     deleteButton.textContent = "削除";
     deleteButton.addEventListener("click", () => {
-      if (confirm("本気ですか？")) {
+      if (confirm("本当に削除しますか？")) {
         todoList.splice(index, 1);
         saveTodoList();
         renderTodoList();
@@ -109,14 +113,28 @@ function renderTodoList() {
   });
 }
 
+// 現在の日付と時刻を取得する関数
+function getCurrentDateTime() {
+  const now = new Date();
+  const options = {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  };
+  return now.toLocaleString("ja-JP", options);
+}
+
 // 初期化関数
 function init() {
-  loadTodoList(); // ローカルストレージからデータを読み込む
-  renderTodoList(); // 読み込んだデータを描画
+  loadTodoList();
+  renderTodoList();
 }
 
 // イベントリスナー
-addTodoButton.addEventListener("click", addTodo);
+addTodoButton.addEventListener("click", saveTodo);
 
 // 初期化の実行
 init();
